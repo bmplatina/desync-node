@@ -59,15 +59,16 @@ desync is a Go library and CLI tool that re-implements [casync](https://github.c
 
 Install the latest release into `$HOME/go/bin`:
 
-```text
+```bash
 go install -v github.com/folbricht/desync/cmd/desync@latest
 ```
 
 Or build from source:
 
-```text
+```bash
 git clone https://github.com/folbricht/desync.git
-cd desync/cmd/desync && go install
+cd desync/cmd/desync
+GOOS=darwin GOARCH=arm64 go build -o desync_arm64 ./cmd/desync # macOS arm64
 ```
 
 ## Quick Start
