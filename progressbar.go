@@ -25,6 +25,7 @@ func NewProgressBar(prefix string) ProgressBar {
 		// refresh rate from the default 200ms to a more manageable 500ms.
 		bar.SetRefreshRate(time.Millisecond * 500)
 		bar.ShowBar = false
+		bar.ShowCounters = true
 		// Write every progress update in a separate line, instead of using
 		// the default carriage returns.
 		bar.Callback = func(s string) { fmt.Fprintln(os.Stderr, s) }
