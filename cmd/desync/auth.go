@@ -23,6 +23,7 @@ const (
 	authProfileEndpoint = "https://api.prodbybitmap.com/auth/profile"
 	authKeyringService  = "bitmap-disttool"
 	authKeyringUser     = "jwt"
+	authTokenEnvVar     = "BITMAP_AUTH_TOKEN"
 )
 
 var (
@@ -224,6 +225,11 @@ func saveAuthToken(token string) error {
 }
 
 func loadAuthToken() (string, error) {
+	envToken := strings.TrimSpace(os.Getenv(authTokenEnvVar))
+	if envToken != "" {
+		return envToken, nil
+	}
+
 	token, err := keyringGet(authKeyringService, authKeyringUser)
 	if err == nil && strings.TrimSpace(token) != "" {
 		return token, nil

@@ -13,6 +13,8 @@ import (
 )
 
 func TestTarCommandArchive(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldGet := keyringGet
 	oldNow := authNow
 	oldProfile := authGetProfile
@@ -44,6 +46,8 @@ func TestTarCommandArchive(t *testing.T) {
 }
 
 func TestTarCommandIndex(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldGet := keyringGet
 	oldNow := authNow
 	oldProfile := authGetProfile

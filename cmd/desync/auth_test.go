@@ -17,6 +17,8 @@ import (
 )
 
 func TestAuthLoginCommand(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldPost := authPostJSON
 	oldSet := keyringSet
 	oldOut := stdout
@@ -62,6 +64,8 @@ func TestAuthLoginCommand(t *testing.T) {
 }
 
 func TestRootAuthGuardBlocksUnauthenticatedCommands(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldGet := keyringGet
 	oldPath := authTokenPathFunc
 	t.Cleanup(func() {
@@ -91,6 +95,8 @@ func TestRootAuthGuardBlocksUnauthenticatedCommands(t *testing.T) {
 }
 
 func TestEnsureDeveloperRole(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldGet := keyringGet
 	oldNow := authNow
 	oldProfile := authGetProfile
@@ -118,6 +124,8 @@ func TestEnsureDeveloperRole(t *testing.T) {
 }
 
 func TestEnsureDeveloperRoleDenied(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldGet := keyringGet
 	oldNow := authNow
 	oldProfile := authGetProfile
@@ -145,6 +153,8 @@ func TestEnsureDeveloperRoleDenied(t *testing.T) {
 }
 
 func TestSaveAuthTokenFallbackToFile(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldSet := keyringSet
 	oldPath := authTokenPathFunc
 	t.Cleanup(func() {
@@ -183,6 +193,8 @@ func testJWT(payload string) string {
 }
 
 func TestReadPasswordFromNonTTY(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	cmd := &cobra.Command{}
 	cmd.SetIn(strings.NewReader("pw-value\n"))
 	pwd, err := readPassword(cmd, bufio.NewReader(cmd.InOrStdin()))
@@ -191,6 +203,8 @@ func TestReadPasswordFromNonTTY(t *testing.T) {
 }
 
 func TestAuthLogoutCommand(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "")
+
 	oldDelete := keyringDelete
 	oldPath := authTokenPathFunc
 	oldOut := stdout
@@ -221,4 +235,20 @@ func TestAuthLogoutCommand(t *testing.T) {
 	require.Error(t, statErr)
 	require.True(t, os.IsNotExist(statErr))
 	require.Contains(t, out.String(), "Logged out.")
+}
+
+func TestLoadAuthTokenFromEnvironment(t *testing.T) {
+	t.Setenv(authTokenEnvVar, "env-jwt-token")
+
+	oldGet := keyringGet
+	t.Cleanup(func() {
+		keyringGet = oldGet
+	})
+	keyringGet = func(service, user string) (string, error) {
+		return "", errors.New("must not be called when env token exists")
+	}
+
+	token, err := loadAuthToken()
+	require.NoError(t, err)
+	require.Equal(t, "env-jwt-token", token)
 }
