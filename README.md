@@ -342,8 +342,12 @@ The CLI tool uses the desync library and makes most features available in a cons
 
 | Command | Description |
 | --- | --- |
+| `auth login` | Login with Bitmap ID and store JWT in OS keychain (`bitmap-disttool`) |
+| `auth logout` | Remove the stored login token from keychain/local fallback |
 | `config` | Show or write the config file |
 | `manpage` | Generate manpages for desync |
+
+All commands except `auth login` require a valid login session. If no valid token is found, desync exits with code 1 and asks you to run `desync auth login`. The `tar` command additionally requires a JWT with `isDeveloper` set.
 
 <details>
 <summary><h3>Common Options</h3></summary>

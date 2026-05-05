@@ -67,6 +67,9 @@ the input can be a tar file or a stream from STDIN with '-'.
 }
 
 func runTar(ctx context.Context, opt tarOptions, args []string) error {
+	if err := ensureDeveloperRole(ctx); err != nil {
+		return err
+	}
 	if err := opt.cmdStoreOptions.validate(); err != nil {
 		return err
 	}

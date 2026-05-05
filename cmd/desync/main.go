@@ -43,6 +43,7 @@ func main() {
 	// Register the sub-commands under root
 	rootCmd := newRootCommand()
 	rootCmd.AddCommand(
+		newAuthCommand(ctx),
 		newConfigCommand(ctx),
 		newCatCommand(ctx),
 		newCacheCommand(ctx),
