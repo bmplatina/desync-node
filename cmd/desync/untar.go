@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,7 +13,6 @@ import (
 type untarOptions struct {
 	cmdStoreOptions
 	desync.LocalFSOptions
-	stores    []string
 	cache     string
 	readIndex bool
 	outFormat string
@@ -29,13 +27,13 @@ func newUntarCommand(ctx context.Context) *cobra.Command {
 		Long: `Extracts a directory tree from a catar file or an index. Use '-' to read the
 index from STDIN.
 
-The input is either a catar archive, or a caidx index file (with -i and -s).
+The input is either a catar archive, or a caidx index file (with -i).
 
 By default, the catar archive is extracted to local disk. Using --output-format=gnu-tar,
 the output can be set to GNU tar, either an archive or STDOUT with '-'.
-`,
+		`,
 		Example: `  desync untar docs.catar /tmp/documents
-  desync untar -s http://192.168.1.1/ -c /path/to/local -i docs.caidx /tmp/documents`,
+  desync untar -c /path/to/local -i docs.caidx /tmp/documents`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runUntar(ctx, opt, args)
@@ -43,7 +41,6 @@ the output can be set to GNU tar, either an archive or STDOUT with '-'.
 		SilenceUsage: true,
 	}
 	flags := cmd.Flags()
-	flags.StringSliceVarP(&opt.stores, "store", "s", nil, "source store(s), used with -i")
 	flags.StringVarP(&opt.cache, "cache", "c", "", "store to be used as cache")
 	flags.BoolVarP(&opt.readIndex, "index", "i", false, "read index file (caidx), not catar")
 	flags.BoolVar(&opt.NoSameOwner, "no-same-owner", false, "extract files as current user")
@@ -56,9 +53,6 @@ the output can be set to GNU tar, either an archive or STDOUT with '-'.
 func runUntar(ctx context.Context, opt untarOptions, args []string) error {
 	if err := opt.cmdStoreOptions.validate(); err != nil {
 		return err
-	}
-	if opt.readIndex && len(opt.stores) == 0 {
-		return errors.New("-i requires at least one store (-s <location>)")
 	}
 
 	input := args[0]
@@ -111,7 +105,7 @@ func runUntar(ctx context.Context, opt untarOptions, args []string) error {
 		return desync.UnTar(ctx, r, fs)
 	}
 
-	s, err := MultiStoreWithCache(opt.cmdStoreOptions, opt.cache, opt.stores...)
+	s, err := MultiStoreWithCache(opt.cmdStoreOptions, opt.cache, defaultTarUntarStoreURL)
 	if err != nil {
 		return err
 	}

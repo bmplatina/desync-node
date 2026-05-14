@@ -14,7 +14,6 @@ import (
 
 type tarOptions struct {
 	cmdStoreOptions
-	store       string
 	chunkSize   string
 	createIndex bool
 	desync.LocalFSOptions
@@ -33,17 +32,17 @@ with the archive chunked into a store. Use '-' to write the output,
 catar or index to STDOUT.
 
 If the desired output is an index file (caidx) rather than a catar,
-the -i option can be provided as well as a store. Using -i is equivalent
+the -i option can be provided. Using -i is equivalent
 to first using the tar command to create a catar, then the make
-command to chunk it into a store and produce an index file. With -i,
+command to chunk it into the configured remote store and produce an index file. With -i,
 less disk space is required as no intermediary catar is created. There
 can however be a difference in performance depending on file size.
 
 By default, input is read from local disk. Using --input-format=tar,
 the input can be a tar file or a stream from STDIN with '-'.
-`,
+		`,
 		Example: `  desync tar documents.catar $HOME/Documents
-  desync tar -i -s /path/to/local pics.caidx $HOME/Pictures`,
+  desync tar -i pics.caidx $HOME/Pictures`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTar(ctx, opt, args)
@@ -51,7 +50,6 @@ the input can be a tar file or a stream from STDIN with '-'.
 		SilenceUsage: true,
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&opt.store, "store", "s", "", "target store (used with -i)")
 	flags.StringVarP(&opt.chunkSize, "chunk-size", "m", "16:64:256", "min:avg:max chunk size in kb")
 	flags.BoolVarP(&opt.createIndex, "index", "i", false, "create index file (caidx), not catar")
 	flags.StringVar(&opt.inFormat, "input-format", "disk", "input format, 'disk' or 'tar'")
@@ -72,9 +70,6 @@ func runTar(ctx context.Context, opt tarOptions, args []string) error {
 	}
 	if err := opt.cmdStoreOptions.validate(); err != nil {
 		return err
-	}
-	if opt.createIndex && opt.store == "" {
-		return errors.New("-i requires a store (-s <location>)")
 	}
 	if opt.AddRoot && opt.inFormat != "tar" {
 		return errors.New("--tar-add-root works only with --input-format tar")
@@ -129,7 +124,7 @@ func runTar(ctx context.Context, opt tarOptions, args []string) error {
 	r, w := io.Pipe()
 
 	// Open the target store
-	s, err := WritableStore(opt.store, opt.cmdStoreOptions)
+	s, err := WritableStore(defaultTarUntarStoreURL, opt.cmdStoreOptions)
 	if err != nil {
 		return err
 	}

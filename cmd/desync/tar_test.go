@@ -70,10 +70,15 @@ func TestTarCommandIndex(t *testing.T) {
 	// Create an output dir to function as chunk store and to hold the caidx
 	out := t.TempDir()
 	index := filepath.Join(out, "tree.caidx")
+	oldDefaultStore := defaultTarUntarStoreURL
+	defaultTarUntarStoreURL = out
+	t.Cleanup(func() {
+		defaultTarUntarStoreURL = oldDefaultStore
+	})
 
 	// Run "tar" command to build a caidx index and store the chunks
 	cmd := newTarCommand(context.Background())
-	cmd.SetArgs([]string{"-s", out, "-i", index, "testdata/tree"})
+	cmd.SetArgs([]string{"-i", index, "testdata/tree"})
 	_, err := cmd.ExecuteC()
 	require.NoError(t, err)
 }

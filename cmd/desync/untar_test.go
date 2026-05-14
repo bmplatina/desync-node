@@ -26,10 +26,15 @@ func TestUntarCommandArchive(t *testing.T) {
 func TestUntarCommandIndex(t *testing.T) {
 	// Create an output dir to extract into
 	out := t.TempDir()
+	oldDefaultStore := defaultTarUntarStoreURL
+	defaultTarUntarStoreURL = "testdata/tree.store"
+	t.Cleanup(func() {
+		defaultTarUntarStoreURL = oldDefaultStore
+	})
 
 	// Run "untar" to extract from a caidx index
 	cmd := newUntarCommand(context.Background())
-	cmd.SetArgs([]string{"-s", "testdata/tree.store", "-i", "--no-same-owner", "--no-same-permissions", "testdata/tree.caidx", out})
+	cmd.SetArgs([]string{"-i", "--no-same-owner", "--no-same-permissions", "testdata/tree.caidx", out})
 	_, err := cmd.ExecuteC()
 	require.NoError(t, err)
 }
@@ -38,6 +43,11 @@ func TestUntarCommandIndex(t *testing.T) {
 func TestUntarCommandRepair(t *testing.T) {
 	// Create an output dir to extract into
 	out := t.TempDir()
+	oldDefaultStore := defaultTarUntarStoreURL
+	defaultTarUntarStoreURL = "testdata/tree.store"
+	t.Cleanup(func() {
+		defaultTarUntarStoreURL = oldDefaultStore
+	})
 
 	// Create cache with invalid chunk by reading a chunk from another store, and writing it to the cache with the wrong id
 	cache := t.TempDir()
@@ -53,13 +63,13 @@ func TestUntarCommandRepair(t *testing.T) {
 
 	// Run "untar" with "--repair=false" -> get error
 	cmd := newUntarCommand(context.Background())
-	cmd.SetArgs([]string{"-s", "testdata/tree.store", "-c", cache, "--cache-repair=false", "-i", "--no-same-owner", "--no-same-permissions", "testdata/tree.caidx", out})
+	cmd.SetArgs([]string{"-c", cache, "--cache-repair=false", "-i", "--no-same-owner", "--no-same-permissions", "testdata/tree.caidx", out})
 	_, err = cmd.ExecuteC()
 	require.EqualError(t, err, fmt.Sprintf("chunk id %s does not match its hash %s", chunkId, badChunkHash))
 
 	// Now run "untar" with "--repair=true" -> no error
 	cmd = newUntarCommand(context.Background())
-	cmd.SetArgs([]string{"-s", "testdata/tree.store", "-c", cache, "--cache-repair=true", "-i", "--no-same-owner", "--no-same-permissions", "testdata/tree.caidx", out})
+	cmd.SetArgs([]string{"-c", cache, "--cache-repair=true", "-i", "--no-same-owner", "--no-same-permissions", "testdata/tree.caidx", out})
 	_, err = cmd.ExecuteC()
 	require.NoError(t, err)
 }
