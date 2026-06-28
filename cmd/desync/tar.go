@@ -14,8 +14,7 @@ import (
 
 type tarOptions struct {
 	cmdStoreOptions
-	chunkSize   string
-	createIndex bool
+	chunkSize string
 	desync.LocalFSOptions
 	inFormat string
 	desync.TarReaderOptions
@@ -25,24 +24,20 @@ func newTarCommand(ctx context.Context) *cobra.Command {
 	var opt tarOptions
 
 	cmd := &cobra.Command{
-		Use:   "tar <catar|index> <source>",
-		Short: "Store a directory tree in a catar archive or index",
-		Long: `Encodes a directory tree into a catar archive or alternatively an index file
-with the archive chunked into a store. Use '-' to write the output,
-catar or index to STDOUT.
+		Use:   "tar <index> <source>",
+		Short: "Chunk a directory tree and upload to the chunk server, producing a caidx index",
+		Long: `Encodes a directory tree, chunks the archive and uploads the chunks
+to the configured remote chunk store, then produces a caidx index file.
+Use '-' to write the index to STDOUT.
 
-If the desired output is an index file (caidx) rather than a catar,
-the -i option can be provided. Using -i is equivalent
-to first using the tar command to create a catar, then the make
-command to chunk it into the configured remote store and produce an index file. With -i,
-less disk space is required as no intermediary catar is created. There
-can however be a difference in performance depending on file size.
+This is equivalent to first creating a catar, then chunking it into the
+remote store and producing an index file, but without requiring an
+intermediary catar on disk.
 
 By default, input is read from local disk. Using --input-format=tar,
 the input can be a tar file or a stream from STDIN with '-'.
 		`,
-		Example: `  desync tar documents.catar $HOME/Documents
-  desync tar -i pics.caidx $HOME/Pictures`,
+		Example: `  desync tar pics.caidx $HOME/Pictures`,
 		Args: cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return runTar(ctx, opt, args)
@@ -51,7 +46,6 @@ the input can be a tar file or a stream from STDIN with '-'.
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&opt.chunkSize, "chunk-size", "m", "16:64:256", "min:avg:max chunk size in kb")
-	flags.BoolVarP(&opt.createIndex, "index", "i", false, "create index file (caidx), not catar")
 	flags.StringVar(&opt.inFormat, "input-format", "disk", "input format, 'disk' or 'tar'")
 	flags.BoolVarP(&opt.NoTime, "no-time", "", false, "set file timestamps to zero in the archive")
 	flags.BoolVarP(&opt.AddRoot, "tar-add-root", "", false, "pretend that all tar elements have a common root directory")
@@ -103,24 +97,7 @@ func runTar(ctx context.Context, opt tarOptions, args []string) error {
 		return fmt.Errorf("invalid input format '%s'", opt.inFormat)
 	}
 
-	// Just make the catar and stop if that's all that was required
-	if !opt.createIndex {
-		var w io.Writer
-		if output == "-" {
-			w = os.Stdout
-		} else {
-			f, err := os.Create(output)
-			if err != nil {
-				return err
-			}
-			defer f.Close()
-			w = f
-		}
-		return desync.Tar(ctx, w, fs)
-	}
-
-	// An index is requested, so stream the output of the tar command directly
-	// into a chunker using a pipe
+	// Stream the output of the tar command directly into a chunker using a pipe
 	r, w := io.Pipe()
 
 	// Open the target store
