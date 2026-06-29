@@ -8,14 +8,14 @@ import (
 
 func newRootCommand() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "desync",
-		Short: "Content-addressed binary distribution system",
+		Use:   "bitmap-disttool",
+		Short: "Bitmap Developer Distribution Tool",
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			if !requiresAuthentication(cmd) {
 				return nil
 			}
 			if err := ensureAuthenticated(); err != nil {
-				return errors.New("you are not logged in. Run 'desync auth login'")
+				return errors.New("you are not logged in. Run 'bitmap-disttool auth login'")
 			}
 			return nil
 		},

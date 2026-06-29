@@ -42,29 +42,14 @@ func main() {
 
 	// Register the sub-commands under root
 	rootCmd := newRootCommand()
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(
 		newAuthCommand(ctx),
-		newConfigCommand(ctx),
-		newCatCommand(ctx),
-		newCacheCommand(ctx),
-		newMakeCommand(ctx),
-		newExtractCommand(ctx),
-		newChopCommand(ctx),
-		newChunkCommand(ctx),
 		newInfoCommand(ctx),
-		newInspectChunksCommand(ctx),
-		newListCommand(ctx),
-		newMountIndexCommand(ctx),
-		newPruneCommand(ctx),
-		newPullCommand(ctx),
-		newIndexServerCommand(ctx),
-		newChunkServerCommand(ctx),
 		newTarCommand(ctx),
 		newUntarCommand(ctx),
 		newVerifyCommand(ctx),
 		newVerifyIndexCommand(ctx),
-		newMtreeCommand(ctx),
-		newManpageCommand(ctx, rootCmd),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
